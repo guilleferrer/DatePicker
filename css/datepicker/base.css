@@ -13,6 +13,14 @@ div.datepicker {
 .datepickerContainer {
   position: absolute;
 }
+.datepickerRanges {
+  position: absolute;
+  right: 10px;
+}
+.datepickerRanges * {
+    float: left;
+    clear: left;
+}
 
 /* Hide border divs by default */
 .datepickerBorderT,
