@@ -9,7 +9,8 @@ $(function () {
         date: [from, to],
         calendars: 3,
         mode: 'range',
-        current: new Date(to.getFullYear(), to.getMonth() - 1, 1),
+        starts: 1,
+//        current: new Date(to.getFullYear(), to.getMonth() - 1, 1),
         onChange: function (dates, el) {
             var start = dates[0].toString('dd/MM/yy'),
                 end = dates[1].toString('dd/MM/yy');
