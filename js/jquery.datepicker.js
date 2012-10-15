@@ -23,7 +23,7 @@
             var ids = {},
                 views = {
                     years: 'datepickerViewYears',
-                    moths: 'datepickerViewMonths',
+                    months: 'datepickerViewMonths',
                     days: 'datepickerViewDays'
                 },
                 tpl = {
@@ -519,7 +519,23 @@
                             fill(this);
                         }
                         if (changed) {
-                            options.onChange.apply(this, prepareDate(options));
+                            var prep = prepareDate(options),
+                                range = prep[0];
+
+                            if (options.showRanges) {
+                                if (options.textField && range[0] !== undefined && range[1] !== undefined) {
+                                    $(options.textField + ' span').text(range[0].toString('dd/MM/yy') + ' - ' + range[1].toString('dd/MM/yy'));
+                                }
+                                // Apply changes when manuallyclicking a new range of dates
+                                $('.datepickerRanges input.start').val(range[0].toString('dd/MM/yy'));
+                                $('.datepickerRanges input.end').val(range[1].toString('dd/MM/yy'));
+
+                                // Since the user has "clicked" on the calendar it is now a "custom option"
+                                // which means that the select box with preset of options needs to be selecting the custom one
+                                $(".datepickerRanges option:first").attr('selected', 'selected');
+                            }
+                            // onChange EVENT
+                            options.onChange.apply(this, prep);
                         }
                     }
                     return false;
@@ -719,11 +735,31 @@
                  * Creates the <select /> for  the defined
                  * Ranges
                  **/
-                initRanges = function (el, cal, ranges, onApplyFn) {
+                initRanges = function (el, cal, ranges, onApplyFn, textField) {
 
                     var $ranges = $(cal).find('.datepickerRanges'),
                         $select = $ranges.find('select:first'),
                         $option;
+
+                    /**
+                     * Function that retrieves the selected Range
+                     * start and end dates
+                     **/
+                    $select.getRange = function () {
+                        var $opt = $(this).find(':selected'),
+                            start = $opt.data('range-from'),
+                            end = $opt.data('range-to');
+
+                        if (typeof start == 'string') {
+                            start = Date.parse(start);
+                        }
+                        if (typeof end == 'string') {
+                            end = Date.parse(end);
+                        }
+
+                        return [start, end];
+                    }
+
 
                     //Add options to the select
                     for (var key in ranges) {
@@ -737,39 +773,25 @@
                      **/
                     $select.change(function () {
 
-                        var $opt = $(this).find(':selected'),
-                            start = $opt.data('range-from'),
-                            end = $opt.data('range-to');
-
-                        if (typeof start == 'string') {
-                            start = Date.parse(start);
-                        }
-                        if (typeof end == 'string') {
-                            end = Date.parse(end);
-                        }
+                        var range = $select.getRange();
 
                         // Update the start and end inputs
-                        $ranges.find('input.start').val(start.toString('dd/MM/yy'));
-                        $ranges.find('input.end').val(end.toString('dd/MM/yy'));
+                        $ranges.find('input.start').val(range[0].toString('dd/MM/yy'));
+                        $ranges.find('input.end').val(range[1].toString('dd/MM/yy'));
 
-                                                // Set the date in the calendar
-                        $(el).DatePickerSetDate([start, end], true);
+                        // Set the date in the calendar
+                        $(el).DatePickerSetDate($select.getRange(), true);
                     });
 
 
                     $ranges.find('button').click(function () {
-                        onApplyFn.apply(el);
+                        var range = $select.getRange();
+                        if (textField && range[0] !== undefined && range[1] !== undefined) {
+                            $(textField).text(range[0].toString('dd/MM/yy') + ' - ' + range[1].toString('dd/MM/yy'));
+                        }
+                        onApplyFn.apply(el, range);
                     })
 
-//                    // Create input start
-//                    $ranges.find('input.start').change(function () {
-//                        $(cal).DatePickerSetDate([Date.parse($(this).val()), null], true);
-//                    });
-//
-//                    // Create input  end
-//                    $ranges.find('input.end').change(function () {
-//                        $(cal).DatePickerSetDate([null, Date.parse($(this).val())], true);
-//                    });
                 };
 
             return {
@@ -836,7 +858,7 @@
                             if (options.showRanges) {
 
                                 cal.append(tmpl(tpl.ranges.join('')));
-                                initRanges(this, cal, options.ranges, options.onApply);
+                                initRanges(this, cal, options.ranges, options.onApply, options.textField);
                             }
 
                             fill(cal.get(0));
